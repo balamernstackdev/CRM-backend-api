@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { db } = require('../config/database');
 
 const getAdminDashboard = async (req, res) => {
     try {

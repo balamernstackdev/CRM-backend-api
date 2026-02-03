@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const config = require('./config/config');
+const { db, initPromise } = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter, authLimiter, modifyLimiter } = require('./middleware/rate-limiter');
 
@@ -39,8 +40,23 @@ app.use(express.urlencoded({ extended: true }));
 // Apply general rate limiting to all API routes
 app.use('/api/', apiLimiter);
 
-app.get('/api/health', (req, res) => {
-    res.json({ success: true, message: 'CRM API is running' });
+app.get('/api/health', async (req, res) => {
+    try {
+        await db.raw('SELECT 1');
+        const employeeCount = await db('employees').count('* as count').first();
+        res.json({
+            success: true,
+            message: 'CRM API is running',
+            db: {
+                status: 'connected',
+                client: config.db.client,
+                initialized: employeeCount.count > 0,
+                employeeCount: employeeCount.count
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'CRM API health check failed', error: err.message });
+    }
 });
 
 // Stricter rate limiting for authentication
@@ -60,12 +76,15 @@ module.exports = app;
 
 // Only start server if run directly (not required by tests)
 if (require.main === module) {
-    app.listen(config.port, () => {
-        console.log(`\n🚀 Server running on port ${config.port}`);
-        console.log(`📊 Environment: ${config.nodeEnv}`);
-        console.log(`🌐 Frontend URL: ${config.frontendUrl}`);
-        console.log(`🛡️  Rate limiting enabled\n`);
+    initPromise.then(() => {
+        app.listen(config.port, () => {
+            console.log(`\n🚀 Server running on port ${config.port}`);
+            console.log(`📊 Environment: ${config.nodeEnv}`);
+            console.log(`🌐 Frontend URL: ${config.frontendUrl}`);
+            console.log(`🛡️  Rate limiting enabled\n`);
+        });
+    }).catch(err => {
+        console.error('💀 Failed to initialize database, server not started:', err.message);
+        process.exit(1);
     });
 }
-
-

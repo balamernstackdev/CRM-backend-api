@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const { db } = require('../config/database');
 const config = require('../config/config');
 
 const login = async (req, res) => {

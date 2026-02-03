@@ -56,14 +56,19 @@ async function initializeDatabase() {
     }
 }
 
-// Test connection and initialize
-db.raw('SELECT 1')
+// Export db and init status
+const initPromise = db.raw('SELECT 1')
     .then(async () => {
         console.log(`✅ Database connected (${config.db.client})`);
         await initializeDatabase();
+        return true;
     })
     .catch(err => {
         console.error('❌ Database connection failed:', err);
+        throw err;
     });
 
-module.exports = db;
+module.exports = {
+    db,
+    initPromise
+};

@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const db = require('../config/database');
+const { db } = require('../config/database');
 
 const getEmployees = async (req, res) => {
     try {
