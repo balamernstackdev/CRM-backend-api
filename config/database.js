@@ -2,6 +2,7 @@ const knex = require('knex');
 const config = require('./config');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const dbConfig = {
     client: config.db.client,
@@ -15,10 +16,10 @@ const dbConfig = {
 
 const db = knex(dbConfig);
 
-// Initialize schema if tables are missing (especially for SQLite on first run)
-async function initializeSchema() {
+// Initialize schema and seed default data if missing
+async function initializeDatabase() {
     try {
-        // Simple check for employees table
+        // 1. Initialize Schema if missing
         const hasTable = await db.schema.hasTable('employees');
 
         if (!hasTable && config.db.client === 'better-sqlite3') {
@@ -26,7 +27,6 @@ async function initializeSchema() {
             const schemaPath = path.join(__dirname, '..', 'database', 'schema.sql');
             let schema = fs.readFileSync(schemaPath, 'utf8');
 
-            // Basic SQL splitter for SQLite (stripping comments and splitting by ;)
             schema = schema.replace(/--.*$/gm, '');
             const statements = schema.split(';').filter(s => s.trim());
 
@@ -35,8 +35,24 @@ async function initializeSchema() {
             }
             console.log('✅ Schema initialized successfully');
         }
+
+        // 2. Auto-seed default Admin if table is empty
+        const employeeCount = await db('employees').count('* as count').first();
+        if (employeeCount.count === 0) {
+            console.log('🌱 Database empty. Seeding default Admin user...');
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            await db('employees').insert({
+                name: 'Admin',
+                email: 'admin@company.com',
+                mobile: '9999999999',
+                password_hash: hashedPassword,
+                role: 'Admin',
+                status: 'Active'
+            });
+            console.log('✅ Default Admin created: admin@company.com / admin123');
+        }
     } catch (error) {
-        console.error('❌ Schema initialization failed:', error.message);
+        console.error('❌ Database initialization failed:', error.message);
     }
 }
 
@@ -44,7 +60,7 @@ async function initializeSchema() {
 db.raw('SELECT 1')
     .then(async () => {
         console.log(`✅ Database connected (${config.db.client})`);
-        await initializeSchema();
+        await initializeDatabase();
     })
     .catch(err => {
         console.error('❌ Database connection failed:', err);
