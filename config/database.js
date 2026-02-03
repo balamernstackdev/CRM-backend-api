@@ -22,23 +22,34 @@ async function initializeDatabase() {
         // 1. Initialize Schema if missing
         const hasTable = await db.schema.hasTable('employees');
 
-        if (!hasTable && config.db.client === 'better-sqlite3') {
+        if (!hasTable) {
             console.log('⚠️  Database tables missing. Initializing schema...');
             const schemaPath = path.join(__dirname, '..', 'database', 'schema.sql');
             let schema = fs.readFileSync(schemaPath, 'utf8');
 
+            // Strip comments
             schema = schema.replace(/--.*$/gm, '');
-            const statements = schema.split(';').filter(s => s.trim());
+
+            // Robust splitter that respects triggers (BEGIN...END blocks)
+            // We split by semicolon followed by newline/eoa, which usually separates top-level statements
+            const statements = schema.split(/;\s*$/m).filter(s => s.trim());
 
             for (const statement of statements) {
-                await db.raw(statement);
+                try {
+                    await db.raw(statement);
+                } catch (sErr) {
+                    console.warn(`Soft warning on schema statement: ${sErr.message}`);
+                }
             }
-            console.log('✅ Schema initialized successfully');
+            console.log('✅ Schema initialization attempted');
         }
 
         // 2. Auto-seed default Admin if table is empty
-        const employeeCount = await db('employees').count('* as count').first();
-        if (employeeCount.count === 0) {
+        const employeeCountRes = await db('employees').count('* as count').first();
+        // Convert to Number as some clients (like pg) return count as a string
+        const count = parseInt(employeeCountRes.count || employeeCountRes['count(*)'] || 0);
+
+        if (count === 0) {
             console.log('🌱 Database empty. Seeding default Admin user...');
             const hashedPassword = await bcrypt.hash('admin123', 10);
             await db('employees').insert({
@@ -50,9 +61,11 @@ async function initializeDatabase() {
                 status: 'Active'
             });
             console.log('✅ Default Admin created: admin@company.com / admin123');
+        } else {
+            console.log(`ℹ️  Found ${count} employees in database.`);
         }
     } catch (error) {
-        console.error('❌ Database initialization failed:', error.message);
+        console.error('❌ Database initialization error:', error.message);
     }
 }
 

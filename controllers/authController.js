@@ -10,7 +10,8 @@ const login = async (req, res) => {
         const employee = await db('employees').where('email', email).first();
 
         if (!employee) {
-            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+            console.log(`Login failure: User not found (${email})`);
+            return res.status(401).json({ success: false, message: 'Invalid credentials - User not found' });
         }
 
         if (employee.status !== 'Active') {
@@ -20,7 +21,8 @@ const login = async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, employee.password_hash);
 
         if (!isPasswordValid) {
-            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+            console.log(`Login failure: Incorrect password for ${email}`);
+            return res.status(401).json({ success: false, message: 'Invalid credentials - Password mismatch' });
         }
 
         const accessToken = jwt.sign(
