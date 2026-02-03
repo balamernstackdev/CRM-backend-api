@@ -33,11 +33,18 @@ const login = async (req, res) => {
             { expiresIn: config.jwt.expiry }
         );
 
-        const refreshToken = jwt.sign(
+        const newRefreshToken = jwt.sign(
             { employeeId: employee.employee_id },
             config.jwt.refreshSecret,
             { expiresIn: config.jwt.refreshExpiry }
         );
+
+        console.log('--- Auth Debug ---');
+        console.log('Employee ID:', employee.employee_id);
+        console.log('Email:', employee.email);
+        console.log('Refresh Secret Length:', config.jwt.refreshSecret ? config.jwt.refreshSecret.length : 'MISSING');
+        console.log('Token Generated:', newRefreshToken ? 'YES (length ' + newRefreshToken.length + ')' : 'NO (NULL)');
+        console.log('------------------');
 
         await db('employees')
             .where('employee_id', employee.employee_id)
@@ -48,7 +55,7 @@ const login = async (req, res) => {
             message: 'Login successful',
             data: {
                 accessToken,
-                refreshToken,
+                refreshToken: newRefreshToken,
                 user: {
                     employeeId: employee.employee_id,
                     name: employee.name,
@@ -71,7 +78,9 @@ const refreshToken = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Refresh token required' });
         }
 
+        console.log('Refresh token attempt with:', refreshToken ? (refreshToken.substring(0, 10) + '...') : 'NULL');
         const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
+        console.log('Decoded refresh token:', decoded);
 
         const employee = await db('employees').where('employee_id', decoded.employeeId).first();
 

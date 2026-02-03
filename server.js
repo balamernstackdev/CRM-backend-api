@@ -52,6 +52,10 @@ app.get('/api/health', async (req, res) => {
                 client: config.db.client,
                 initialized: employeeCount.count > 0,
                 employeeCount: employeeCount.count
+            },
+            auth: {
+                jwtSecretConfigured: !!config.jwt.secret && config.jwt.secret !== 'fallback_jwt_secret_key_123',
+                refreshSecretConfigured: !!config.jwt.refreshSecret && config.jwt.refreshSecret !== 'fallback_refresh_token_secret_key_456'
             }
         });
     } catch (err) {

@@ -22,9 +22,9 @@ module.exports = {
             }
     },
     jwt: {
-        secret: process.env.JWT_SECRET,
+        secret: process.env.JWT_SECRET || 'fallback_jwt_secret_key_123',
         expiry: process.env.JWT_EXPIRY || '15m',
-        refreshSecret: process.env.REFRESH_TOKEN_SECRET,
+        refreshSecret: process.env.REFRESH_TOKEN_SECRET || 'fallback_refresh_token_secret_key_456',
         refreshExpiry: process.env.REFRESH_TOKEN_EXPIRY || '7d'
     },
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
