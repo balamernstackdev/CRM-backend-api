@@ -15,6 +15,9 @@ const reportRoutes = require('./routes/reports');
 
 const app = express();
 
+// Trust proxy for Render/Vercel (needed for accurate rate limiting)
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const allowedOrigins = config.frontendUrl ? config.frontendUrl.split(',') : [];
 app.use(cors({
