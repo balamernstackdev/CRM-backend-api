@@ -35,8 +35,16 @@ const validateCustomer = [
 const validateCallLog = [
     body('customer_id').isInt({ min: 1 }).withMessage('Valid customer required'),
     body('call_datetime').isISO8601().withMessage('Valid datetime required'),
-    body('call_type').isIn(['Incoming', 'Outgoing', 'Incoming (Missed Call)', 'Outgoing (Busy)', 'Outgoing (Not Reachable)']).withMessage('Invalid call type'),
-    body('call_purpose').isIn(['Payment Refund', 'KYC Update', 'Payout 2025', 'Payout 2024', 'Cheque Issued (Refund Date)', 'New Cheque Issued for Renewal', 'New Cheque for Refund (Altered Date)', 'NCD Document', 'NCD Payout', 'Appointments', 'Others']).withMessage('Invalid call purpose'),
+    body('call_type').isIn(['Incoming', 'Outgoing', 'Missed']).withMessage('Invalid call type'),
+    body('call_purpose').isIn([
+        'Investment Follow-up',
+        'Payment Reminder',
+        'KYC Pending',
+        'New Lead',
+        'Complaint',
+        'General Query',
+        'Others'
+    ]).withMessage('Invalid call purpose'),
     body('priority').isIn(['Emergency', 'Important', 'Manageable', 'Appointments']).withMessage('Invalid priority'),
     body('call_status').optional().isIn(['Connected', 'Not Answered', 'Busy']).withMessage('Invalid call status'),
     body('notes').trim().isLength({ min: 10, max: 1000 }).withMessage('Notes must be 10-1000 characters'),

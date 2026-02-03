@@ -119,7 +119,7 @@ const createCallLog = async (req, res) => {
             call_type,
             call_purpose,
             priority: priority || 'Manageable',
-            call_status,
+            call_status: call_status || 'Connected',
             call_duration: call_duration || null,
             notes,
             next_followup_date: next_followup_date || null
